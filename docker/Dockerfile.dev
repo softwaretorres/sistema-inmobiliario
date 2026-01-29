@@ -1,0 +1,32 @@
+# Development Dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies for Prisma and native modules
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    openssl
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy Prisma schema
+COPY src/infrastructure/database/prisma ./prisma/
+
+# Generate Prisma client
+RUN npx prisma generate --schema=./prisma/schema.prisma || true
+
+# Copy rest of the application
+COPY . .
+
+# Expose ports
+EXPOSE 3000 9229
+
+# Start in development mode
+CMD ["npm", "run", "start:dev"]

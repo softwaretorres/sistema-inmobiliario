@@ -1,0 +1,151 @@
+// ============================================
+// CENTRAL DATABASE SCHEMA
+// Manages tenants and super admins
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/central"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("CENTRAL_DATABASE_URL")
+}
+
+// ============================================
+// TENANT MANAGEMENT
+// ============================================
+
+model Tenant {
+  id           String       @id @default(uuid())
+  name         String
+  slug         String       @unique
+  databaseName String       @unique @map("database_name")
+  databaseHost String       @default("localhost") @map("database_host")
+  status       TenantStatus @default(ACTIVE)
+  plan         PlanType     @default(BASIC)
+
+  // Contact info
+  email        String?
+  phone        String?
+
+  // Address
+  address      String?
+  city         String?
+  state        String?
+  country      String?
+
+  // Branding
+  logo         String?
+  primaryColor String?      @map("primary_color")
+
+  // Settings (JSON for flexibility)
+  settings     Json?
+
+  // Limits based on plan
+  maxUsers     Int          @default(5) @map("max_users")
+  maxProperties Int         @default(100) @map("max_properties")
+
+  // Subscription
+  trialEndsAt  DateTime?    @map("trial_ends_at")
+
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  superAdmins  TenantSuperAdmin[]
+
+  @@map("tenants")
+}
+
+// ============================================
+// SUPER ADMIN (Global system administrators)
+// ============================================
+
+model SuperAdmin {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  status    SuperAdminStatus @default(ACTIVE)
+
+  // Security
+  lastLoginAt    DateTime? @map("last_login_at")
+  failedAttempts Int       @default(0) @map("failed_attempts")
+  lockedUntil    DateTime? @map("locked_until")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tenants   TenantSuperAdmin[]
+
+  @@map("super_admins")
+}
+
+// ============================================
+// TENANT <-> SUPER ADMIN RELATIONSHIP
+// ============================================
+
+model TenantSuperAdmin {
+  id           String     @id @default(uuid())
+  tenantId     String     @map("tenant_id")
+  superAdminId String     @map("super_admin_id")
+  role         String     @default("owner") // owner, manager
+
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, superAdminId])
+  @@map("tenant_super_admins")
+}
+
+// ============================================
+// SYSTEM AUDIT LOG
+// ============================================
+
+model SystemAuditLog {
+  id           String   @id @default(uuid())
+  superAdminId String?  @map("super_admin_id")
+  tenantId     String?  @map("tenant_id")
+  action       String
+  entity       String
+  entityId     String?  @map("entity_id")
+  details      Json?
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([superAdminId])
+  @@index([tenantId])
+  @@index([createdAt])
+  @@map("system_audit_logs")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+  PENDING
+}
+
+enum PlanType {
+  BASIC
+  PROFESSIONAL
+  ENTERPRISE
+  CUSTOM
+}
+
+enum SuperAdminStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
