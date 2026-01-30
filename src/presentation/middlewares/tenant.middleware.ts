@@ -25,13 +25,13 @@ export class TenantMiddleware implements NestMiddleware {
       throw new UnauthorizedException('Invalid or inactive tenant');
     }
 
-    // Set tenant in request and context
+    // Set tenant in request
     req.tenantId = tenant.id;
     req.tenantSlug = tenant.slug;
 
-    // Set tenant in async local storage for database connection
-    this.tenantContext.setTenant(tenant);
-
-    next();
+    // Run the rest of the request in the tenant context
+    this.tenantContext.run(tenant, () => {
+      next();
+    });
   }
 }

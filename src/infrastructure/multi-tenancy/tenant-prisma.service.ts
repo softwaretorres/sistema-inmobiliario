@@ -1,6 +1,6 @@
 import { Injectable, OnModuleDestroy, Logger, Scope } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaClient } from '../database/prisma/generated/tenant';
+import { PrismaClient, Prisma } from '../database/prisma/generated/tenant';
 import { TenantContextService, ITenant } from './tenant-context.service';
 
 interface IPrismaClientOptions {
@@ -9,7 +9,7 @@ interface IPrismaClientOptions {
       url: string;
     };
   };
-  log?: Array<{ emit: string; level: string }>;
+  log?: Prisma.LogLevel[] | Prisma.LogDefinition[];
 }
 
 @Injectable({ scope: Scope.DEFAULT })
@@ -75,9 +75,9 @@ export class TenantPrismaService implements OnModuleDestroy {
 
     if (process.env.NODE_ENV === 'development') {
       options.log = [
-        { emit: 'event', level: 'query' },
-        { emit: 'stdout', level: 'warn' },
-        { emit: 'stdout', level: 'error' },
+        { emit: 'event', level: 'query' } as Prisma.LogDefinition,
+        { emit: 'stdout', level: 'warn' } as Prisma.LogDefinition,
+        { emit: 'stdout', level: 'error' } as Prisma.LogDefinition,
       ];
     }
 

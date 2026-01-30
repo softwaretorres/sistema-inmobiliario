@@ -30,9 +30,21 @@ export class PermissionsGuard implements CanActivate {
     }
 
     // Check if user has any of the required permissions
-    const hasPermission = requiredPermissions.some((permission) =>
-      user.role.permissions.includes(permission),
-    );
+    const hasPermission = requiredPermissions.some((permission) => {
+      // Direct permission match
+      if (user.role.permissions.includes(permission)) {
+        return true;
+      }
+
+      // Check for 'manage' wildcard permission
+      // If required permission is 'Property:read', check for 'Property:manage'
+      const [subject, action] = permission.split(':');
+      if (subject && action && user.role.permissions.includes(`${subject}:manage`)) {
+        return true;
+      }
+
+      return false;
+    });
 
     if (!hasPermission) {
       throw new ForbiddenException(

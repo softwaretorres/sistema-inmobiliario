@@ -2,7 +2,7 @@
  * Prisma Mock for unit testing
  */
 
-export const mockPrismaClient = {
+export const mockPrismaClient: any = {
   property: {
     create: jest.fn(),
     update: jest.fn(),
@@ -57,7 +57,7 @@ export const mockPrismaClient = {
   },
   $connect: jest.fn(),
   $disconnect: jest.fn(),
-  $transaction: jest.fn((fn) => fn(mockPrismaClient)),
+  $transaction: jest.fn((fn: any) => fn(mockPrismaClient)),
 };
 
 export const mockTenantPrismaService = {

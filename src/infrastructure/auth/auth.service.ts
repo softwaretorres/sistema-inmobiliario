@@ -103,7 +103,7 @@ export class AuthService {
         id: user.role.id,
         name: user.role.name,
         permissions: user.role.permissions.map(
-          (rp) => `${rp.permission.action}:${rp.permission.subject}`,
+          (rp) => `${rp.permission.subject}:${rp.permission.action}`,
         ),
       },
     };
